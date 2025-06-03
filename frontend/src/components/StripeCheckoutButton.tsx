@@ -13,7 +13,7 @@ console.log("===========>",cartItems)
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}`, {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products:cartItems }),

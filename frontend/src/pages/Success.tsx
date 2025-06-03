@@ -1,13 +1,56 @@
-import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 const Success = () => {
+  const location = useLocation();
+  const sessionId = new URLSearchParams(location.search).get('session_id');
+  const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (sessionId) {
+      fetch(`${process.env.REACT_APP_BACKEND_URL}/session/${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          setPaymentIntent(data.paymentIntentId);
+        })
+        .catch(() => setMessage("⚠️ فشل في جلب تفاصيل الدفع"));
+    }
+  }, [sessionId]);
+
+  const handleRefund = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: paymentIntent }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage('✅ تم استرجاع المبلغ بنجاح');
+      } else {
+        setMessage('❌ فشل الاسترجاع');
+      }
+    } catch (err) {
+      setMessage('⚠️ حدث خطأ أثناء العملية');
+    }
+  };
+
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-green-50 text-green-800">
-      <h1 className="text-3xl font-bold mb-4">🎉 Payment Successful!</h1>
-      <p className="mb-6">Thank you for your purchase. Your order has been confirmed.</p>
-      <Link to="/" className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
-        Go Back to Shop
-      </Link>
+    <div className="flex flex-col items-center gap-4 p-10">
+      <h1 className="text-2xl font-bold text-green-700">✅ تم الدفع بنجاح</h1>
+      {paymentIntent && (
+        <>
+          <button
+            onClick={handleRefund}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            استرجاع المبلغ
+          </button>
+          <p className="text-gray-700">{message}</p>
+        </>
+      )}
     </div>
   );
 };
